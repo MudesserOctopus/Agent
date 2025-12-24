@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server';
-import sql, { pool } from '../../../lib/db';
-
+import { authenticateUser } from '../../../lib/services/userservice';
 
 export async function POST(request) {
   const { email, password } = await request.json();
   console.log("Login attempt:", { email, password });
 
   try {
-    const result = await (await pool)
-      .request()
-      .input('email', sql.NVarChar, email)
-      .input('password', sql.NVarChar, password)
-      .query('SELECT * FROM Users WHERE email = @email AND password = @password');
+    const result = await authenticateUser(email, password);
 
-    if (result.recordset.length > 0) {
+    if (result.length > 0) {
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ success: false, message: 'Invalid credentials' });

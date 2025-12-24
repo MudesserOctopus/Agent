@@ -13,7 +13,7 @@ export default function Home() {
         </p>
         <div className="flex space-x-4">
           <Link
-            href="/SomePage"
+            href="/CreateAgent"
             className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-gray-100 transition"
           >
             Create Agent

@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginUser } from "../lib/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,7 +13,19 @@ export default function LoginPage() {
     setError("");
     
     try {
-      const data = await loginUser(email, password);
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
       if (data.success) {
         router.push('/dashboard');
       } else {
