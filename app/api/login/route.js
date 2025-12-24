@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import sql, { pool } from '../../../lib/db'; // adjust path
+import sql, { pool } from '../../../lib/db';
+
 
 export async function POST(request) {
   const { email, password } = await request.json();
