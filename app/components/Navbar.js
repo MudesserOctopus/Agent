@@ -1,6 +1,16 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
+  const pathname = usePathname();
+
+  // Hide navbar on the CreateAgent page
+  if (pathname && pathname.toLowerCase().startsWith("/createagent")) {
+    return null;
+  }
+
   return (
     <nav className="w-full py-4 px-6 flex justify-between items-center fixed top-0 bg-white shadow z-50">
       <div className="text-xl font-bold text-indigo-600">YourLogo</div>
