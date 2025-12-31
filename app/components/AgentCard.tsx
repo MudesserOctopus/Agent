@@ -1,8 +1,10 @@
+import Link from "next/link";
 type Props = {
     name: string;
     subtitle: string;
     workspace: string;
     tools?: number;
+    href:string
   };
   
   export default function AgentCard({
@@ -10,6 +12,7 @@ type Props = {
     subtitle,
     workspace,
     tools,
+    href,
   }: Props) {
     return (
       <div className="bg-white rounded-xl p-5 shadow-sm flex flex-col justify-between">
@@ -19,13 +22,13 @@ type Props = {
             <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center text-white">
               🤖
             </div>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 border rounded-md text-sm">
+            <Link href={href} className="inline-block">
+              <button className="px-3 py-1 border rounded-md text-sm cursor-pointer">
                 Chat
               </button>
-              <button className="px-2">⋮</button>
-            </div>
+            </Link>
           </div>
+          
   
           {/* Content */}
           <h3 className="font-semibold text-lg">{name}</h3>

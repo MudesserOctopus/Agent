@@ -1,4 +1,6 @@
-export default function WorkspaceFilters() {
+import Link from "next/link";
+
+export default function WorkspaceFilters({ href }: { href: string }) {
     return (
       <div className="flex flex-wrap items-center gap-4 mb-6">
         {/* Tabs */}
@@ -21,11 +23,11 @@ export default function WorkspaceFilters() {
         <input
           type="text"
           placeholder="Search..."
-          className="px-3 py-2 border rounded-md"
+          className="px-3 py-2 border rounded-md text-black"
         />
   
         {/* Sort */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-black">
           <span>All</span>
           <span className="bg-purple-600 text-white text-sm px-2 py-1 rounded-full">
             6
@@ -33,11 +35,12 @@ export default function WorkspaceFilters() {
         </div>
   
         <span className="ml-auto flex items-center gap-2">
-          <button className="border p-2 rounded-md">⬛⬛</button>
-          <button className="border p-2 rounded-md">☰</button>
-          <button className="bg-purple-600 text-white px-4 py-2 rounded-md">
+          
+        <Link href={href}>
+          <button className="bg-purple-600 text-white px-4 py-2 rounded-md cursor-pointer">
             + New
           </button>
+        </Link>
         </span>
       </div>
     );

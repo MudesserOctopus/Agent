@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+
 export default function AgentSettings() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -11,6 +12,8 @@ export default function AgentSettings() {
   const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+ 
+
  
   
 
@@ -69,6 +72,12 @@ export default function AgentSettings() {
     setMessage({ type: "", text: "" });
 
     try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setMessage({ type: "error", text: "User not logged in" });
+        return;
+      }
+
       const agentData = {
         name: name ,
         model: model, 
@@ -77,6 +86,7 @@ export default function AgentSettings() {
         instructions: instructions,
         websites: websites,
         quickItems: quickItems,
+        workspace_id: parseInt(userId),
 
       };
       
@@ -93,6 +103,7 @@ export default function AgentSettings() {
       
       if (response.ok) {
         setMessage({ type: "success", text: "Agent saved successfully!" });
+        router.push("/workspace"); // 🔁 change "/" to your desired route
       } else {
         setMessage({ type: "error", text: "Failed to save agent" });
       }

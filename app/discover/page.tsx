@@ -2,6 +2,7 @@ import Sidebar from "@/app/components/sidebar";
 import DiscoverCard from "@/app/components/discovercard";
 
 export default function DiscoverPage() {
+  
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />

@@ -21,8 +21,8 @@ export default function Navbar() {
         <a href="#" className="text-gray-700 hover:text-indigo-600">
           Pricing
         </a>
-        <Link href="/" className="text-gray-700 hover:text-indigo-600">
-          Login
+        <Link href="/signUp" className="text-gray-700 hover:text-indigo-600">
+          Sign Up
         </Link>
       </div>
     </nav>

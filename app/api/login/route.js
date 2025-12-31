@@ -3,13 +3,14 @@ import { authenticateUser } from '../../../lib/services/userservice';
 
 export async function POST(request) {
   const { email, password } = await request.json();
-  console.log("Login attempt:", { email, password });
+  
 
   try {
-    const result = await authenticateUser(email, password);
+    const result = await authenticateUser(email, password)
 
     if (result.length > 0) {
-      return NextResponse.json({ success: true });
+      const user = result[0];
+      return NextResponse.json({ success: true, userId: user.ID });
     } else {
       return NextResponse.json({ success: false, message: 'Invalid credentials' });
     }
