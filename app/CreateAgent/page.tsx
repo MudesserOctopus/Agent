@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-
 export default function AgentSettings() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -12,14 +11,11 @@ export default function AgentSettings() {
   const [instructions, setInstructions] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
- 
-
- 
-  
 
   // Left navigation: General / Knowledge
-  const [activeSection, setActiveSection] =
-    useState<"general" | "knowledge">("general");
+  const [activeSection, setActiveSection] = useState<"general" | "knowledge">(
+    "general"
+  );
 
   // Quick knowledge state
   const [quickTitle, setQuickTitle] = useState("");
@@ -54,7 +50,6 @@ export default function AgentSettings() {
   };
 
   const handleSaveAgent = async () => {
-    // Validate required fields
     if (!name.trim()) {
       setMessage({ type: "error", text: "Please enter an agent name" });
       return;
@@ -72,52 +67,54 @@ export default function AgentSettings() {
     setMessage({ type: "", text: "" });
 
     try {
-      const userId = localStorage.getItem('userId');
+      const userId = localStorage.getItem("userId");
       if (!userId) {
         setMessage({ type: "error", text: "User not logged in" });
         return;
       }
 
-      const agentData = {
-        name: name ,
-        model: model, 
-        creativity_level: creativityLevel,
-        greeting_message: greetingMessage,
-        instructions: instructions,
-        websites: websites,
-        quickItems: quickItems,
-        workspace_id: parseInt(userId),
+      const formData = new FormData();
 
-      };
-      
-      
+      // Normal fields
+      formData.append("name", name);
+      formData.append("model", model);
+      formData.append("creativity_level", creativityLevel.toString());
+      formData.append("greeting_message", greetingMessage);
+      formData.append("instructions", instructions);
+      formData.append("workspace_id", userId);
+
+      // Arrays
+      formData.append("websites", JSON.stringify(websites));
+      formData.append("quickItems", JSON.stringify(quickItems));
+
+      // 🔑 Files
+      documents.forEach((file) => {
+        formData.append("documents", file);
+      });
+    
       
 
       const response = await fetch("/api/agents", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(agentData),
+        body: formData, // ❗ NO headers
       });
-      
+
+      const data = await response.json();
+
       if (response.ok) {
         setMessage({ type: "success", text: "Agent saved successfully!" });
-        router.push("/workspace"); // 🔁 change "/" to your desired route
+        router.push("/workspace");
       } else {
-        setMessage({ type: "error", text: "Failed to save agent" });
+        setMessage({ type: "error", text: data.message || "Failed to save agent" });
       }
-
-      
     } catch (error) {
-      console.error("Error saving agent:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to save agent";
-      setMessage({ type: "error", text: errorMessage });
+      console.error(error);
+      setMessage({ type: "error", text: "Failed to save agent" });
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleAddQuickKnowledge = () => {
     if (!quickTitle.trim() || !quickContent.trim()) return;
@@ -131,9 +128,13 @@ export default function AgentSettings() {
 
   const handleDocumentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
+
     const filesArray = Array.from(e.target.files);
-    setDocuments(filesArray);
+
+    setDocuments((prev) => [...prev, ...filesArray]);
   };
+
+
 
   const handleAddWebsite = () => {
     if (!websiteUrl.trim()) return;
@@ -141,7 +142,6 @@ export default function AgentSettings() {
     setWebsites((prev: string[]) => [...prev, websiteUrl.trim()]);
     setWebsiteUrl("");
   };
-  
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -171,7 +171,6 @@ export default function AgentSettings() {
         <aside className="w-56 bg-white shadow rounded-lg p-4 h-fit">
           <nav className="space-y-4">
             <div>
-              
               <button
                 className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
                   activeSection === "general"
@@ -342,7 +341,6 @@ export default function AgentSettings() {
                   className="text-black w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
-              
             </>
           )}
 
@@ -354,8 +352,8 @@ export default function AgentSettings() {
                   Quick Knowledge
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
-                  Add short knowledge snippets with a title and content that your
-                  agent can use during conversations.
+                  Add short knowledge snippets with a title and content that
+                  your agent can use during conversations.
                 </p>
 
                 <div className="space-y-4 mb-6">
@@ -401,16 +399,20 @@ export default function AgentSettings() {
                     </h3>
                     <div className="border border-gray-200 rounded-md divide-y divide-gray-200">
                       {quickItems.map(
-                        (item: { title: string; content: string }, index: number) => (
-                        <div key={index} className="p-3">
-                          <p className="text-sm font-medium text-gray-900">
-                            {item.title}
-                          </p>
-                          <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                            {item.content}
-                          </p>
-                        </div>
-                      ))}
+                        (
+                          item: { title: string; content: string },
+                          index: number
+                        ) => (
+                          <div key={index} className="p-3">
+                            <p className="text-sm font-medium text-gray-900">
+                              {item.title}
+                            </p>
+                            <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                              {item.content}
+                            </p>
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
                 )}
@@ -493,9 +495,7 @@ export default function AgentSettings() {
                     Add link
                   </button>
                 </div>
-                {error && (
-                  <p className="text-sm text-red-600 mt-1">{error}</p>
-                )}
+                {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
 
                 {websites.length > 0 && (
                   <div>
@@ -522,9 +522,7 @@ export default function AgentSettings() {
             </>
           )}
         </div>
-        
       </div>
-     
     </div>
   );
 }

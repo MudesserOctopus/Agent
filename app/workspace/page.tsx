@@ -12,7 +12,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     const fetchAgents = async () => {
       const userId = localStorage.getItem('userId');
-      console.log("##############################",userId);
+      
       if (!userId) {
         setLoading(false);
         return;
