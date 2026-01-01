@@ -51,6 +51,8 @@ function ChatPageContent() {
       setLoadingAgent(true);
       const response = await fetch(`/api/agents?id=${agentId}`);
       const data = await response.json();
+      console.log("##########################", data.agent.assistant_ID);
+
 
       if (data.success && data.agent) {
         setAgent(data.agent);

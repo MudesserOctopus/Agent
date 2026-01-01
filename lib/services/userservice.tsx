@@ -97,7 +97,7 @@ export const createQuickKnowledge = async (
 
 export const getAgentById = async (agentId: number) => {
   try {
-    
+   
     const connection = await pool;
     const result = await connection
       .request()
@@ -291,13 +291,13 @@ export const updateAgentVectorStore = async (
 
 export const getRecordVectorID = async (agent_id: number) => {
   try {
-    console.log("##############")
+    
     const connection = await pool;
 
     const query = `
       SELECT vector_store_ID
       FROM Agents
-      WHERE agent_id = @agent_id
+      WHERE ID = @agent_id
     `;
 
     const request = connection
@@ -316,6 +316,38 @@ export const getRecordVectorID = async (agent_id: number) => {
 
   } catch (error) {
     console.error("DB Error in getRecordVectorID:", error);
+    throw error;
+  }
+};
+
+export const getAssistantID = async (agent_id: number) => {
+  try {
+    
+    const connection = await pool;
+
+    const query = `
+      SELECT assistant_ID
+      FROM Agents
+      WHERE ID = @agent_id
+    `;
+
+    const request = connection
+      .request()
+      .input("agent_id", sql.Int, agent_id);
+
+    const result = await request.query(query);
+    
+
+    // If no record found
+    if (!result.recordset || result.recordset.length === 0) {
+      return null;
+    }
+
+    // Return only the vector store ID
+    return result.recordset[0].assistant_ID;
+
+  } catch (error) {
+    console.error("DB Error in getAssistantID:", error);
     throw error;
   }
 };

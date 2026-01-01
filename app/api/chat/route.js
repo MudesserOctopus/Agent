@@ -8,9 +8,10 @@ import {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_KEY,
 });
-export const runtime = "nodejs";
+// export const runtime = "nodejs";
 export async function POST(request) {
   try {
+    
     const { agentId, messages } = await request.json();
 
     if (!agentId || !messages || !Array.isArray(messages)) {
@@ -22,12 +23,10 @@ export async function POST(request) {
 
     // Get agent data from database
     const agent = await getAgentById(agentId);
-    console.log("➡️ Before getRecordVectorID");
 
-    const vectorStore = await getRecordVectorID(agentId);
+    
 
-    console.log("⬅️ After getRecordVectorID", vectorStore);
-
+   
     if (!agent) {
       return NextResponse.json(
         { success: false, message: "Agent not found" },
