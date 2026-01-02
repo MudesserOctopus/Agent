@@ -67,6 +67,7 @@ export default function WorkspacePage() {
                 subtitle={agent.greeting_message || "No greeting"}
                 workspace={agent.workspace_id ? `Workspace ${agent.workspace_id}` : "No workspace"}
                 href={`/chat?id=${agent.ID}`}
+                agentId={agent.ID}
               />
             ))}
           </div>

@@ -6,6 +6,9 @@ import {
   getAgentById,
   createVectorStoreAndUploadFiles,
   updateAgentVectorStore,
+  updateAgent,
+  createDocument,
+  createWebAddress,
 } from "../../../lib/services/userservice";
 import { extractWebsiteText } from "../../../lib/utils/websiteExtractor";
 
@@ -48,10 +51,7 @@ export async function POST(request) {
       for (const url of websites) {
         try {
           const extractedText = await extractWebsiteText(url);
-          console.log("====== WEBSITE TEXT START ======");
-          console.log("URL:", url);
-          console.log(extractedText.slice(0, 10000)); // first 2k chars
-          console.log("====== WEBSITE TEXT END ======");
+      
 
           // Safety limit (important)
           const MAX_CHARS = 200_000;
@@ -90,12 +90,102 @@ export async function POST(request) {
       await updateAgentVectorStore(results.newId, vectorStoreId, assistantId);
     }
 
+    // Save documents to Document table
+    const docPromises = documents.map((file) => createDocument(results.newId, file.name));
+    // Save websites to WebAddress table
+    const webPromises = websites.map((url) => createWebAddress(results.newId, url));
+
+    await Promise.all([...docPromises, ...webPromises]);
+
     if (results.newId) {
       return NextResponse.json({ success: true, id: results.newId });
     } else {
       return NextResponse.json({
         success: false,
         message: "Could not create agent",
+      });
+    }
+  } catch (error) {
+    console.error("DB Error:", error);
+    return NextResponse.json({ success: false, message: "Database error" });
+  }
+}
+
+export async function PUT(request) {
+  const formData = await request.formData();
+  const name = formData.get("name");
+  const model = formData.get("model");
+  const creativity_level = parseInt(formData.get("creativity_level"));
+  const greeting_message = formData.get("greeting_message");
+  const instructions = formData.get("instructions");
+  const websites = JSON.parse(formData.get("websites"));
+  const quickItems = JSON.parse(formData.get("quickItems"));
+  const workspace_id = parseInt(formData.get("workspace_id"));
+  const editId = parseInt(formData.get("editId"));
+  const documents = formData.getAll("documents"); // array of files
+
+  try {
+    const results = await updateAgent(
+      editId,
+      name,
+      model,
+      creativity_level,
+      greeting_message,
+      instructions,
+      workspace_id
+    );
+    const quickKnowledgeResult = await createQuickKnowledge(
+      results.newId,
+      quickItems,
+      websites
+    );
+
+    // Handle documents
+    let vectorStoreId = null;
+    let assistantId = null;
+
+    // 1️⃣ Start with uploaded documents
+    const allDocuments = [...documents];
+
+    // 2️⃣ Convert websites into text documents
+    if (websites && websites.length > 0) {
+      for (const url of websites) {
+        try {
+          const extractedText = await extractWebsiteText(url);
+          allDocuments.push(
+            new File([extractedText], `${url}.txt`, { type: "text/plain" })
+          );
+        } catch (error) {
+          console.error(`Error extracting text from ${url}:`, error);
+        }
+      }
+    }
+
+    // 3️⃣ Create vector store and upload files if there are documents
+    if (allDocuments.length > 0) {
+      const vectorResult = await createVectorStoreAndUploadFiles(
+        results.newId,
+        allDocuments
+      );
+      vectorStoreId = vectorResult.vectorStoreId;
+      assistantId = vectorResult.assistantId;
+
+      await updateAgentVectorStore(results.newId, vectorStoreId, assistantId);
+    }
+
+    // Save documents to Document table
+    const docPromises = documents.map((file) => createDocument(results.newId, file.name));
+    // Save websites to WebAddress table
+    const webPromises = websites.map((url) => createWebAddress(results.newId, url));
+
+    await Promise.all([...docPromises, ...webPromises]);
+
+    if (results.newId) {
+      return NextResponse.json({ success: true, id: results.newId });
+    } else {
+      return NextResponse.json({
+        success: false,
+        message: "Could not update agent",
       });
     }
   } catch (error) {

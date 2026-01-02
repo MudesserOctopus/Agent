@@ -28,18 +28,24 @@ export const createAgent = async (
   creativity_level: number,
   greeting_message: string,
   instructions: string,
-  workspace_id: number
+  workspace_id: number,
+  id?: number
 ) => {
   try {
     const connection = await pool;
 
-    // 1. Get the current maximum ID
-    const maxIdResult = await connection
-      .request()
-      .query("SELECT MAX(ID) AS maxId FROM Agents");
+    let newId;
+    if (id !== undefined) {
+      newId = id;
+    } else {
+      // 1. Get the current maximum ID
+      const maxIdResult = await connection
+        .request()
+        .query("SELECT MAX(ID) AS maxId FROM Agents");
 
-    const maxId = maxIdResult.recordset[0].maxId || 0; // if table empty, start from 0
-    const newId = maxId + 1;
+      const maxId = maxIdResult.recordset[0]?.maxId || 0; // if table empty, start from 0
+      newId = maxId + 1;
+    }
 
     // 2. Insert new record with manual ID
     const insertResult = await connection
@@ -60,6 +66,50 @@ export const createAgent = async (
     return { newId }; // usually empty for INSERT, but you can return newId if needed
   } catch (error) {
     console.error("DB Error in createAgent:", error);
+    throw error;
+  }
+};
+
+export const updateAgent = async (
+  id: number,
+  name: string,
+  model_names: string,
+  creativity_level: number,
+  greeting_message: string,
+  instructions: string,
+  workspace_id: number
+) => {
+  try {
+    const connection = await pool;
+
+    // Delete old quick knowledge
+    await connection
+      .request()
+      .input("id", sql.Int, id)
+      .query("DELETE FROM QuickKnowledge WHERE agentID = @id");
+
+    // Delete old documents
+    await connection
+      .request()
+      .input("id", sql.Int, id)
+      .query("DELETE FROM Document WHERE agent_id = @id");
+
+    // Delete old web addresses
+    await connection
+      .request()
+      .input("id", sql.Int, id)
+      .query("DELETE FROM WebAddress WHERE agent_id = @id");
+
+    // Delete old agent
+    await connection
+      .request()
+      .input("id", sql.Int, id)
+      .query("DELETE FROM Agents WHERE ID = @id");
+
+    // Create new agent with same ID
+    return await createAgent(name, model_names, creativity_level, greeting_message, instructions, workspace_id, id);
+  } catch (error) {
+    console.error("DB Error in updateAgent:", error);
     throw error;
   }
 };
@@ -114,8 +164,20 @@ export const getAgentById = async (agentId: number) => {
       .input("agentId", sql.Int, agentId)
       .query("SELECT * FROM QuickKnowledge WHERE agentID = @agentId");
 
+    const documentsResult = await connection
+      .request()
+      .input("agentId", sql.Int, agentId)
+      .query("SELECT * FROM Document WHERE agent_id = @agentId");
+
+    const webAddressesResult = await connection
+      .request()
+      .input("agentId", sql.Int, agentId)
+      .query("SELECT * FROM WebAddress WHERE agent_id = @agentId");
+
     const agent = result.recordset[0];
     agent.quickKnowledge = quickKnowledgeResult.recordset;
+    agent.documents = documentsResult.recordset;
+    agent.webAddresses = webAddressesResult.recordset;
 
     return agent;
   } catch (error) {
@@ -319,7 +381,55 @@ export const getRecordVectorID = async (agent_id: number) => {
     throw error;
   }
 };
+export const createDocument = async (agentId: number, documentName: string) => {
+  try {
+    const connection = await pool;
 
+    const maxIdResult = await connection
+      .request()
+      .query("SELECT MAX(ID) AS maxId FROM Document");
+
+    const maxId = maxIdResult.recordset[0]?.maxId || 0;
+    const newId = maxId + 1;
+
+    await connection
+      .request()
+      .input("ID", sql.Int, newId)
+      .input("agent_id", sql.Int, agentId)
+      .input("document_name", sql.NVarChar, documentName)
+      .query(
+        "INSERT INTO Document (ID, agent_id, document_name) VALUES (@ID, @agent_id, @document_name)"
+      );
+  } catch (error) {
+    console.error("DB Error in createDocument:", error);
+    throw error;
+  }
+};
+
+export const createWebAddress = async (agentId: number, address: string) => {
+  try {
+    const connection = await pool;
+
+    const maxIdResult = await connection
+      .request()
+      .query("SELECT MAX(id) AS maxId FROM WebAddress");
+
+    const maxId = maxIdResult.recordset[0]?.maxId || 0;
+    const newId = maxId + 1;
+
+    await connection
+      .request()
+      .input("id", sql.Int, newId)
+      .input("agent_id", sql.Int, agentId)
+      .input("address", sql.NVarChar, address)
+      .query(
+        "INSERT INTO WebAddress (id, agent_id, address) VALUES (@id, @agent_id, @address)"
+      );
+  } catch (error) {
+    console.error("DB Error in createWebAddress:", error);
+    throw error;
+  }
+};
 export const getAssistantID = async (agent_id: number) => {
   try {
     

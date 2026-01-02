@@ -4,7 +4,8 @@ type Props = {
     subtitle: string;
     workspace: string;
     tools?: number;
-    href:string
+    href:string;
+    agentId: number;
   };
   
   export default function AgentCard({
@@ -13,6 +14,7 @@ type Props = {
     workspace,
     tools,
     href,
+    agentId,
   }: Props) {
     return (
       <div className="bg-white rounded-xl p-5 shadow-sm flex flex-col justify-between">
@@ -22,11 +24,18 @@ type Props = {
             <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center text-white">
               🤖
             </div>
-            <Link href={href} className="inline-block">
-              <button className="px-3 py-1 border rounded-md text-sm cursor-pointer">
-                Chat
-              </button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href={`/createAgent?edit=${agentId}`} className="inline-block">
+                <button className="px-3 py-1 border rounded-md text-sm cursor-pointer">
+                  Edit
+                </button>
+              </Link>
+              <Link href={href} className="inline-block">
+                <button className="px-3 py-1 border rounded-md text-sm cursor-pointer">
+                  Chat
+                </button>
+              </Link>
+            </div>
           </div>
           
   

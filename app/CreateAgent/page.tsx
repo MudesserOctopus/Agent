@@ -1,9 +1,12 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AgentSettings() {
+function AgentSettingsInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+  const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [model, setModel] = useState("Anthropic Claude 4.5 Sonnet");
   const [creativityLevel, setCreativityLevel] = useState(50);
@@ -31,6 +34,42 @@ export default function AgentSettings() {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [error, setError] = useState("");
   const [websites, setWebsites] = useState<string[]>([]);
+
+  // Existing data for editing
+  const [existingDocuments, setExistingDocuments] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (editId) {
+      setIsEditing(true);
+      fetchAgentData(editId);
+    }
+  }, [editId]);
+
+  const fetchAgentData = async (id: string) => {
+    try {
+      const response = await fetch(`/api/agents?id=${id}`);
+      const data = await response.json();
+      if (data.success) {
+        const agent = data.agent;
+        setName(agent.Name);
+        setModel(agent.model_names);
+        setCreativityLevel(agent.creativity_level);
+        setGreetingMessage(agent.greeting_message);
+        setInstructions(agent.instructions);
+        // Load quick knowledge
+        const quick = agent.quickKnowledge.filter((item: any) => !item.title.includes('://'));
+        setQuickItems(quick.map((item: any) => ({ title: item.title, content: item.content })));
+        // Load websites
+        setWebsites(agent.webAddresses.map((w: any) => w.address));
+        // Load existing documents
+        setExistingDocuments(agent.documents.map((d: any) => d.document_name));
+      } else {
+        setMessage({ type: "error", text: "Failed to load agent data" });
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Error loading agent data" });
+    }
+  };
 
   const isValidUrl = (url: string): boolean => {
     try {
@@ -86,7 +125,9 @@ export default function AgentSettings() {
       // Arrays
       formData.append("websites", JSON.stringify(websites));
       formData.append("quickItems", JSON.stringify(quickItems));
-      
+      if (isEditing && editId) {
+        formData.append("editId", editId);
+      }
 
       // 🔑 Files
       documents.forEach((file) => {
@@ -96,7 +137,7 @@ export default function AgentSettings() {
       
 
       const response = await fetch("/api/agents", {
-        method: "POST",
+        method: isEditing ? "PUT" : "POST",
         body: formData, // ❗ NO headers
       });
 
@@ -465,6 +506,22 @@ export default function AgentSettings() {
                     </ul>
                   </div>
                 )}
+
+                {existingDocuments.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                      Existing documents (re-upload to keep, or leave to remove)
+                    </h3>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      {existingDocuments.map((name: string, index: number) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                          <span>{name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* WEBSITES */}
@@ -505,7 +562,7 @@ export default function AgentSettings() {
                     </h3>
                     <ul className="space-y-1 text-sm text-indigo-700">
                       {websites.map((url: string, index: number) => (
-                        <li key={index}>
+                        <li key={index} className="flex justify-between items-center">
                           <a
                             href={url}
                             target="_blank"
@@ -514,6 +571,13 @@ export default function AgentSettings() {
                           >
                             {url}
                           </a>
+                          <button
+                            type="button"
+                            onClick={() => setWebsites(websites.filter((_, i) => i !== index))}
+                            className="text-red-500 hover:text-red-700 ml-2"
+                          >
+                            Remove
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -525,5 +589,13 @@ export default function AgentSettings() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AgentSettings() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AgentSettingsInner />
+    </Suspense>
   );
 }
