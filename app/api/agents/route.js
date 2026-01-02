@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import {
-  getAssistantID,
-  getRecordVectorID,
   createAgent,
   createQuickKnowledge,
   getAgents,
@@ -9,6 +7,7 @@ import {
   createVectorStoreAndUploadFiles,
   updateAgentVectorStore,
 } from "../../../lib/services/userservice";
+import { extractWebsiteText } from "../../../lib/utils/websiteExtractor";
 
 export async function POST(request) {
   const formData = await request.formData();
@@ -40,15 +39,54 @@ export async function POST(request) {
     // Handle documents
     let vectorStoreId = null;
     let assistantId = null;
-    if (documents && documents.length > 0) {
+
+    // 1️⃣ Start with uploaded documents
+    const allDocuments = [...documents];
+
+    // 2️⃣ Convert websites into text documents
+    if (websites && websites.length > 0) {
+      for (const url of websites) {
+        try {
+          const extractedText = await extractWebsiteText(url);
+          console.log("====== WEBSITE TEXT START ======");
+          console.log("URL:", url);
+          console.log(extractedText.slice(0, 10000)); // first 2k chars
+          console.log("====== WEBSITE TEXT END ======");
+
+          // Safety limit (important)
+          const MAX_CHARS = 200_000;
+          const finalText = extractedText.slice(0, MAX_CHARS);
+
+          const safeFileName = url
+            .replace(/^https?:\/\//, "")
+            .replace(/[^a-z0-9]/gi, "_")
+            .toLowerCase();
+
+          const websiteFile = new File([finalText], `${safeFileName}.txt`, {
+            name: `${safeFileName}.txt`,
+            type: "text/plain",
+            size: Buffer.byteLength(finalText),
+            arrayBuffer: async () => Buffer.from(finalText, "utf-8"),
+          });
+
+          allDocuments.push(websiteFile);
+        } catch (err) {
+          console.error(`Failed to process website: ${url}`, err);
+        }
+      }
+    }
+
+    // 3️⃣ Upload everything together
+    if (allDocuments.length > 0) {
       const result = await createVectorStoreAndUploadFiles(
         results.newId,
-        documents,
+        allDocuments,
         instructions
       );
+
       vectorStoreId = result.vectorStoreId;
       assistantId = result.assistantId;
-      // Update agent with vector_store_id and assistant_id
+
       await updateAgentVectorStore(results.newId, vectorStoreId, assistantId);
     }
 

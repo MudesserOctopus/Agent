@@ -1,8 +1,9 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-// import { htmlToText } from "html-to-text";
+import { htmlToText } from "html-to-text";
 
 export async function extractWebsiteText(url: string): Promise<string> {
+ 
   const response = await axios.get(url, {
     timeout: 15000,
     headers: {
@@ -23,6 +24,6 @@ export async function extractWebsiteText(url: string): Promise<string> {
       { selector: "a", options: { ignoreHref: true } },
     ],
   });
-
+  
   return text.trim();
 }
