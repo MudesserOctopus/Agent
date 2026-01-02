@@ -86,6 +86,7 @@ export default function AgentSettings() {
       // Arrays
       formData.append("websites", JSON.stringify(websites));
       formData.append("quickItems", JSON.stringify(quickItems));
+      
 
       // 🔑 Files
       documents.forEach((file) => {

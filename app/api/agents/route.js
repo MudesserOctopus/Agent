@@ -74,8 +74,6 @@ export async function GET(request) {
   try {
     if (agentId) {
       const agent = await getAgentById(parseInt(agentId));
-  
-      
 
       if (!agent) {
         return NextResponse.json(

@@ -281,7 +281,7 @@ export const updateAgentVectorStore = async (
       .input("vectorStoreId", sql.NVarChar, vectorStoreId)
       .input("assistantId", sql.NVarChar, assistantId)
       .query(
-        "UPDATE Agents SET vector_store_id = @vectorStoreId, assistant_id = @assistantId WHERE ID = @agentId"
+        "UPDATE Agents SET vector_store_ID = @vectorStoreId, assistant_ID = @assistantId WHERE ID = @agentId"
       );
   } catch (error) {
     console.error("DB Error in updateAgentVectorStore:", error);
